@@ -4,6 +4,9 @@ Query-г postgre бааз дээр уншуулах шаардлагатай д�
 
 Backend code дахь resources/application.properties дотор доорх db connection дахь мэдээллийг агуулна.
 
+-------------------------------------------------------------------------------------------------------
+
+
 spring.application.name=Change
 
 spring.datasource.url=jdbc:postgresql://127.0.0.1:5432/test
