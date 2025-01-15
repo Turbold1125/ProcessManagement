@@ -1,48 +1,142 @@
 import React, { useEffect, useState } from 'react';
-import { Typography, Modal, Form, Select, Input, Button, Row, Col, Tabs } from 'antd';
-import { useColors } from '../../hooks/useColors';
-import { useFiberTypes } from '../../hooks/useFiberTypes';
-import { useCustomers } from '../../hooks/useCustomers';
-import { useMaterials } from '../../hooks/useMaterials';
+import { Typography, Modal, Form, Select, Input, Button, Table, message, Row, Col } from 'antd';
+import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
+import { constantsService } from '../../Services/constants.service';
+import { inventoryService } from '../../Services/Inventory.service';
 
+const { Title } = Typography;
 const { Option } = Select;
 
-const { Title, Text } = Typography;
-
-const ReceiveItemModal = ({ isModalVisible, handleCancel, handleReceiveItem, form, defaultCustomerName, defaultColor, defaultFiberType}) => {
-    const { fiberColors } = useColors();
-    const { fiberTypes } = useFiberTypes();
-    const { customers } = useCustomers();
-    const { materials } = useMaterials();
+const ReceiveItemModal = ({ isModalVisible, handleCancel, setRefresh }) => {
+    const [fiberColors, setFiberColors] = useState([]);
+    const [fiberTypes, setFiberTypes] = useState([]);
+    const [customers, setCustomers] = useState([]);
+    const [materials, setMaterials] = useState([]);
+    const [dataSource, setDataSource] = useState([]);
+    
     const [selectedMaterial, setSelectedMaterial] = useState('');
     
+    const [form] = Form.useForm();
+
     useEffect(() => {
         if (isModalVisible) {
-            // Set default values when the modal is opened
-            form.setFieldsValue({
-                customerName: defaultCustomerName || undefined,
-                fiberColor: defaultColor || undefined,
-                fiberType: defaultFiberType || undefined,
-            });
+            fetchModalData();
         }
-    }, [isModalVisible, defaultCustomerName, defaultColor, defaultFiberType, form]);
+    }, [isModalVisible]);
 
+    const fetchModalData = async () => {
+        try {
+            const [colors, types, customers, materials] = await Promise.all([
+                constantsService.fetchAllFiberColors(),
+                constantsService.fetchAllFiberTypes(),
+                constantsService.fetchAllCustomers(),
+                constantsService.fetchAllMaterials(),
+            ]);
+            setFiberColors(colors);
+            setFiberTypes(types);
+            setCustomers(customers);
+            setMaterials(materials);
+        } catch (error) {
+            message.error('Error loading data for the modal.');
+        }
+    };
+
+    const handleAddItem = (values) => {
+        const newItem = {
+            key: Date.now(),
+            ...values,
+        };
+        setDataSource([...dataSource, newItem]);
+        form.setFieldsValue({
+            fiberMaterial: values.fiberMaterial,
+            customerName: values.customerName,
+            fiberColor: values.fiberColor,
+            fiberType: values.fiberType,
+            roughWeight: null,
+            baleWeight: null,
+            bobbinWeight: null,
+            bobbinNum: null,
+        });
+        message.success('Жагсаалтанд нэмэгдлээ');
+    };
+
+    const handleDeleteRow = (key) => {
+        setDataSource(dataSource.filter((item) => item.key !== key));
+    };
+
+    const handleReceiveItems = async () => {
+        try {
+            await Promise.all(
+                dataSource.map(async (item) => {
+                    const requestBody = {
+                        fiberMaterial: item.fiberMaterial,
+                        customerName: item.customerName,
+                        fiberColor: item.fiberColor,
+                        fiberType: item.fiberType,
+                        roughWeight: item.roughWeight,
+                        baleWeight: item.baleWeight || null,
+                        bobbinWeight: item.bobbinWeight || null,
+                        bobbinNum: item.bobbinNum || null,
+                    };
+                    return inventoryService.createInventory(requestBody);
+                })
+            );
+            message.success('Items received successfully!');
+            setRefresh(true);
+            setDataSource([]);
+            form.resetFields();
+            handleCancel();
+        } catch (error) {
+            message.error('Error receiving items.');
+        }
+    };
+
+    const columns = [
+        { title: 'Түүхий эдийн төрөл', dataIndex: 'fiberMaterial', key: 'fiberMaterial' },
+        { title: 'Харилцагч', dataIndex: 'customerName', key: 'customerName' },
+        { title: 'Өнгө', dataIndex: 'fiberColor', key: 'fiberColor' },
+        { title: 'Төрөл', dataIndex: 'fiberType', key: 'fiberType' },
+        { title: 'Бохир жин (кг)', dataIndex: 'roughWeight', key: 'roughWeight' },
+        { title: 'Шуудайны жин (кг)', dataIndex: 'baleWeight', key: 'baleWeight' },
+        { title: 'Бобины жин (кг)', dataIndex: 'bobbinWeight', key: 'bobbinWeight' },
+        { title: 'Бобины дугаар', dataIndex: 'bobbinNum', key: 'bobbinNum' },
+        {
+            title: 'Үйлдэл',
+            key: 'actions',
+            render: (_, record) => (
+                <Button
+                    danger
+                    icon={<DeleteOutlined />}
+                    onClick={() => handleDeleteRow(record.key)}
+                />
+            ),
+        },
+    ];
 
     return (
         <Modal
-            title={<Title level={4} style={{ margin: 0, color: '#333', textAlign: 'center' }}>Түүхий эд хүлээн авах</Title>}
-            open={isModalVisible}
+            title={
+                <Title level={4} style={{ textAlign: 'center', margin: 0 }}>
+                    Receive Items
+                </Title>
+            }
+            visible={isModalVisible}
             onCancel={handleCancel}
-            width={600}
-            footer={null}
-            bodyStyle={{ padding: '24px 32px', backgroundColor: '#f9f9f9' }}
-            centered
+            footer={[
+                <Button key="cancel" onClick={handleCancel}>
+                    Cancel
+                </Button>,
+                <Button key="submit" type="primary" onClick={handleReceiveItems} disabled={dataSource.length === 0}>
+                    Save
+                </Button>,
+            ]}
+            width={1000}
         >
             <Form
                 form={form}
-                onFinish={handleReceiveItem}
                 layout="vertical"
-                style={{ maxWidth: '100%' }}
+                onFinish={handleAddItem}
+                style={{ marginBottom: '16px' }}
             >
                 <Row gutter={24}>
                     <Col span={12}>
@@ -168,26 +262,17 @@ const ReceiveItemModal = ({ isModalVisible, handleCancel, handleReceiveItem, for
                         </>
                     )}
                 </Row>
-                <Form.Item style={{ marginTop: '16px', textAlign: 'center' }}>
-                    <Button
-                        type="primary"
-                        htmlType="submit"
-                        style={{ border: 'none', borderRadius: '8px', padding: '6px 24px' }}
-                    >
-                        Хадгалах
-                    </Button>
-                    <Button
-                        style={{
-                            marginLeft: '12px',
-                            borderRadius: '8px',
-                            padding: '6px 24px',
-                        }}
-                        onClick={handleCancel}
-                    >
-                        Цуцлах
-                    </Button>
-                </Form.Item>
+                <Button type="dashed" htmlType="submit" icon={<PlusOutlined />} style={{ width: '100%' }}>
+                    Add to List
+                </Button>
             </Form>
+            <Table
+                dataSource={dataSource}
+                columns={columns}
+                pagination={false}
+                rowKey="key"
+                bordered
+            />
         </Modal>
     );
 };

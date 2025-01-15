@@ -38,6 +38,7 @@ const ConstantsManager = () => {
                     outputs: item.outputs,
                     outputs_en: item.outputs_en,
                     description: item.description,
+                    waste: item.waste,
                 }),
                 ...(constantType === "customer" && {
                     email: item.email,
@@ -63,7 +64,7 @@ const ConstantsManager = () => {
                     fiberType: updateFiberType,
                     factoryProcess: updateFactoryProcess,
                     customer: updateCustomer,
-                    material: updateMaterial
+                    material: updateMaterial,
                 };
                 if (!updateFunctions[currentType]) {
                     throw new Error(`No update function found for type: ${currentType}`);
@@ -185,6 +186,9 @@ const ConstantsManager = () => {
                         <Form.Item name="description" label="Тайлбар">
                             <Input.TextArea placeholder="Тайлбар оруулна уу" style={{ borderRadius: 8 }} rows={4} />
                         </Form.Item>
+                        <Form.Item name="waste" label="Хаягдал">
+                            <Input.TextArea placeholder="Хаягдал оруулна уу" style={{ borderRadius: 8 }} rows={4} />
+                        </Form.Item>
                     </Card>
                 </>
             );
@@ -211,21 +215,22 @@ const ConstantsManager = () => {
 
     const renderColumns = (type) => {
         const commonColumns = [
-            { title: "Нэр", dataIndex: "name", key: "name", align: "center",}
+            { title: "Нэр", dataIndex: "name", key: "name", align: "center", }
         ];
 
         if (type !== "customer") {
             commonColumns.push(
-                { title: "Нэр (англи)", dataIndex: "name_en", key: "name_en", align: "center",});
+                { title: "Нэр (англи)", dataIndex: "name_en", key: "name_en", align: "center", });
         }
 
         const specificColumns = {
             factoryProcess: [
-                { title: "Оролтын бүтээгдэхүүн", dataIndex: "inputs", key: "inputs", align: "center",},
+                { title: "Оролтын бүтээгдэхүүн", dataIndex: "inputs", key: "inputs", align: "center", },
                 // { title: "Оролтын бүтээгдэхүүн  (англи)", dataIndex: "inputs_en", key: "inputs_en" },
-                { title: "Гаралтын бүтээгдэхүүн", dataIndex: "outputs", key: "outputs", align: "center",},
+                { title: "Гаралтын бүтээгдэхүүн", dataIndex: "outputs", key: "outputs", align: "center", },
                 // { title: "Гаралтын бүтээгдэхүүн (англи)", dataIndex: "outputs_en", key: "outputs_en" },
-                { title: "Тайлбар", dataIndex: "description", key: "description", align: "center",},
+                // { title: "Тайлбар", dataIndex: "description", key: "description", align: "center", },
+                { title: "Хаягдал", dataIndex: "waste", key: "waste", align: "center", },
             ],
             customer: [
                 { title: "Email", dataIndex: "email", key: "email" },

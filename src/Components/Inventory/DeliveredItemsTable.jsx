@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Table, Modal, Button, Tag } from "antd";
+import { formatDate } from "../../Utils/DateFormat";
 
 const DeliveredItemsTable = ({ deliveredData }) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -22,7 +23,7 @@ const DeliveredItemsTable = ({ deliveredData }) => {
       title: "Огноо",
       dataIndex: "deliveryTime",
       key: "deliveryTime",
-      render: (deliveryTime) => new Date(deliveryTime).toLocaleString(),
+      render: (deliveryTime) => (deliveryTime ? formatDate(deliveryTime) : "-")
     },
     {
       title: "Түүхий эд",

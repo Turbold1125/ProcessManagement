@@ -1,18 +1,19 @@
 import React, { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Card, Typography, Button, Row, Col, Descriptions, Table, Spin, Alert, message, Tabs, Input, Tag, Form } from "antd";
-import { CheckCircleOutlined, FilePdfOutlined, LeftOutlined, RightOutlined, PlayCircleOutlined, PlusOutlined } from "@ant-design/icons";
+import { Card, Typography, Button, Row, Col, Table, Spin, Alert, message, Tabs, Input, Tag, Form } from "antd";
+import { CheckCircleOutlined, FilePdfOutlined, PlayCircleOutlined, PlusOutlined } from "@ant-design/icons";
 import axios from "axios";
 import useOrderDetails from "../hooks/useOrderDetailss";
 import { inventoryColumns, processColumns, processIOColumns, processLogColumns } from "../Components/OrderDetails/Columns";
 import { EndProcessModal, StartProcessModal } from "../Components/OrderDetails/Modals";
 import StepsComponent from "../Components/OrderDetails/Steps";
-import { set } from "@ant-design/plots/es/core/utils";
 import { useColors } from "../hooks/useColors";
 import { UserContext } from "../Context/userContext";
 import useProcessAction from "../hooks/useProcessAction";
 import { useInventory } from "../hooks/useInventory";
 import ReceiveItemModal from "../Components/Inventory/ReceiveItemModal";
+import Header from "../Components/OrderDetails/Header";
+import OrderInfo from "../Components/OrderDetails/OrderInfo";
 
 const { Title } = Typography;
 const { TabPane } = Tabs;
@@ -37,7 +38,7 @@ const OrderDetailsLayout = () => {
 
   const navigate = useNavigate();
 
-  const { orderDetails, processes: initialProcesses, loading, error, processLogs, fetchProcessLogs, fetchProcesses, fetchOrderById, processInputs, processOutputs, fetchProcessInputs, fetchProcessOutputs} = useOrderDetails(orderId);
+  const { orderDetails, processes: initialProcesses, loading, error, processLogs, fetchProcessLogs, fetchProcesses, fetchOrderById, processInputs, processOutputs, fetchProcessInputs, fetchProcessOutputs } = useOrderDetails(orderId);
   const { startProcess, endProcess, fetchRequiredMaterials } = useProcessAction();
   const { fiberColors } = useColors();
   const { createInventory } = useInventory();
@@ -60,13 +61,13 @@ const OrderDetailsLayout = () => {
   const [wastes, setWastes] = useState([]);
   const [wasteData, setWasteData] = useState({});
   const [isModalVisible, setIsModalVisible] = useState(false);
-  
+
   const [form] = Form.useForm();
 
 
   const [noInventory, setNoInventory] = useState(false);
-  
-    const handleReceiveItem = async (values) => {
+
+  const handleReceiveItem = async (values) => {
     const requestBody = {
       fiberMaterial: values.fiberMaterial,
       customerName: values.customerName,
@@ -116,15 +117,14 @@ const OrderDetailsLayout = () => {
       const processWastes = getWastesForSelectedProcess(selectedProcess);
       setWastes(processWastes);
 
-      // Initialize wasteData with default values
       const initialWasteData = processWastes.reduce((acc, waste) => {
-        acc[waste] = 0; // Default waste weight is 0
+        acc[waste] = 0;
         return acc;
       }, {});
       setWasteData(initialWasteData);
     }
   }, [selectedProcessIndex, processes]);
-  
+
   useEffect(() => {
     if (processes.length > 0 && processes[selectedProcessIndex]) {
       fetchMaterialsForProcess(processes[selectedProcessIndex].processName);
@@ -152,10 +152,6 @@ const OrderDetailsLayout = () => {
       message.error("Процесс сонгогдоогүй байна.");
       return;
     }
-    if (selectedProcess.status === "IN_PROGRESS") {
-      message.error("Энэ процесс явагдаж байна. Та үүнийг эхлүүлэх боломжгүй.");
-      return;
-    }
 
     try {
       const payload = {
@@ -178,7 +174,7 @@ const OrderDetailsLayout = () => {
           : process
       );
       setProcesses(updatedProcesses);
-      
+
       await startProcess(payload);
       await fetchProcessInputs();
       await fetchOrderById(orderId);
@@ -234,7 +230,6 @@ const OrderDetailsLayout = () => {
         responseType: 'blob',
       });
 
-      // Create a link element to trigger the download
       const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
       const link = document.createElement('a');
       link.href = url;
@@ -339,33 +334,8 @@ const OrderDetailsLayout = () => {
 
   return (
     <div style={{ padding: "10px", maxWidth: "1800px", margin: "0 auto" }}>
-      {/* Толгой хэсэг */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "20px",
-        }}
-      >
-        <Button
-          icon={<LeftOutlined />}
-          type="link"
-          onClick={() => navigate(`/order/${parseInt(orderId) - 1}`)}
-        >
-          Өмнөх
-        </Button>
-        <Title level={3} style={{ margin: 0 }}>
-          Захиалгын дэлгэрэнгүй: {orderDetails.id}
-        </Title>
-        <Button
-          icon={<RightOutlined />}
-          type="link"
-          onClick={() => navigate(`/order/${parseInt(orderId) + 1}`)}
-        >
-          Дараах
-        </Button>
-      </div>
+      
+      <Header orderId={orderId} navigate={navigate} />
 
       <Tabs
         activeKey={activeTab}
@@ -374,33 +344,8 @@ const OrderDetailsLayout = () => {
           <Row gutter={[16, 16]}>
             {/* Захиалгын дэлгэрэнгүй */}
             <Col xs={24} md={16}>
-              <Card
-                title="Мэдээлэл"
-                style={{ marginBottom: "20px" }}
-                bodyStyle={{ padding: "15px" }}
-                headStyle={{ background: "#1890ff", color: "#fff" }}
-              >
-                <Descriptions column={2} bordered size="small">
-                  <Descriptions.Item label="Захиалгын дугаар">
-                    {orderDetails.id}
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Огноо">
-                    {new Date(orderDetails.orderDate).toLocaleDateString()}
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Харилцагчийн нэр">
-                    {orderDetails.customerName}
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Өнгө">
-                    {orderDetails.fiberColor}
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Түүхий эдийн төрөл">
-                    {orderDetails.fiberType}
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Төлөв">
-                    {getStatusTag(orderDetails.status)}
-                  </Descriptions.Item>
-                </Descriptions>
-              </Card>
+            
+              <OrderInfo orderDetails={orderDetails} getStatusTag={getStatusTag} />
 
               <Card
                 title="Гаралтын процесс лог"
@@ -509,7 +454,7 @@ const OrderDetailsLayout = () => {
               <Button
                 type="primary"
                 icon={<PlusOutlined />}
-                
+
                 onClick={handleOpenModal}
               >
                 Түүхий эд хүлээн авах
@@ -590,7 +535,7 @@ const OrderDetailsLayout = () => {
         setWasteData={setWasteData}
         wastes={wastes}
       />
-      
+
       <ReceiveItemModal
         isModalVisible={isModalVisible}
         handleCancel={handleCancel}

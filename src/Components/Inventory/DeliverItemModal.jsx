@@ -8,7 +8,6 @@ const DeliverItemsModal = ({ visible, onCancel, inventories, onDeliver }) => {
   const [filteredInventories, setFilteredInventories] = useState([]);
   const [selectedInventories, setSelectedInventories] = useState([]);
 
-  // Extract unique customers
   const uniqueCustomers = [...new Set(
     inventories.filter(item => item.customerName).map(item => item.customerName)
   )];
@@ -25,7 +24,7 @@ const DeliverItemsModal = ({ visible, onCancel, inventories, onDeliver }) => {
 
   const handleDeliver = async () => {
     if (!selectedCustomer) {
-      message.error("Please select a customer before delivering items.");
+      message.error("Хэрэглэгч сонгоно уу.");
       return;
     }
   
@@ -36,12 +35,6 @@ const DeliverItemsModal = ({ visible, onCancel, inventories, onDeliver }) => {
         deliverAll: false,
         deliveryType: "INVENTORY",
       });
-  
-      if (response?.message) {
-        message.success(response.message);
-      } else {
-        message.success("Items delivered successfully!");
-      }
   
       setSelectedInventories([]);
     } catch (error) {

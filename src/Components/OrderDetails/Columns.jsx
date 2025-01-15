@@ -183,6 +183,19 @@ export const inventoryColumns = (selectedFibers, setSelectedFibers) => [
     render: (text) => `${text} кг`,
   },
   {
+    title: 'Шуудай/Боббин дугаар',
+    key: 'baleNum',
+    render: (text, record) => {
+      if (record.baleNum) {
+        return `Шуудай: ${record.baleNum}`;
+      } else if (record.bobbinNum) {
+        return `Боббин: ${record.bobbinNum}`;
+      } else {
+        return 'N/A';
+      }
+    },
+  },
+  {
     title: 'Авах жин (кг)',
     dataIndex: 'conWeight',
     key: 'conWeightInput',
@@ -239,8 +252,8 @@ export const processIOColumns = [
     sorter: (a, b) => a.id - b.id,
   },
   {
-    title: 'Process ID',
-    dataIndex: 'processId',
+    title: 'Процессийн нэр',
+    dataIndex: 'processName',
     key: 'processId',
     align: "center",
     sorter: (a, b) => a.processId - b.processId,
@@ -285,8 +298,9 @@ export const processIOColumns = [
     dataIndex: 'dateTime',
     key: 'dateTime',
     align: "center",
-    render: (dateTime) =>
-      dateTime ? new Date(dateTime).toLocaleString() : 'Not Available',
+    // render: (dateTime) =>
+    //   dateTime ? new Date(dateTime).toLocaleString() : 'Not Available',
+      render: (dateTime) => (dateTime ? formatDate(dateTime) : "-")
   },
   {
     title: 'Захиалгын дугаар',

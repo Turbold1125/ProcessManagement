@@ -8,3 +8,12 @@ export const formatDate = (dateString) => {
         minute: '2-digit',
     }).replace(',', '');
 };
+
+export const handleError = (error) => {
+    console.error('API call error:', error);
+    if (error.response && error.response.data && error.response.data.message) {
+        throw new Error(error.response.data.message);
+    } else {
+        throw new Error('Интернет холболтоо шалгана уу.');
+    }
+};

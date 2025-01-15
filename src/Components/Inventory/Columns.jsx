@@ -70,19 +70,19 @@ export const inventoryColumns = (data) => [
     onFilter: (value, record) => record.fiberType.includes(value),
     render: (text) => text || 'N/A',
   },
-  // {
-  //   title: 'Шуудай/Боббин дугаар',
-  //   key: 'baleNum',
-  //   render: (text, record) => {
-  //     if (record.baleNum) {
-  //       return `Шуудай: ${record.baleNum}`;
-  //     } else if (record.bobbinNum) {
-  //       return `Боббин: ${record.bobbinNum}`;
-  //     } else {
-  //       return 'N/A';
-  //     }
-  //   },
-  // },
+  {
+    title: 'Шуудай/Боббин дугаар',
+    key: 'baleNum',
+    render: (text, record) => {
+      if (record.baleNum) {
+        return `Шуудай: ${record.baleNum}`;
+      } else if (record.bobbinNum) {
+        return `Боббин: ${record.bobbinNum}`;
+      } else {
+        return 'N/A';
+      }
+    },
+  },
   { title: 'Бохир жин (кг)', dataIndex: 'roughWeight', key: 'roughWeight' },
   // {
   //   title: 'Шуудай/Боббин жин (кг)',

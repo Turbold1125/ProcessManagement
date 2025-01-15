@@ -8,7 +8,6 @@ import ProcessDetailsModal from '../Components/ProcessDetailModal';
 import { StatusColorMap } from '../Constants/Constants';
 
 import { formatDate } from '../Utils/DateFormat';
-import { UserContext } from '../Context/userContext';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -63,15 +62,27 @@ const Orders = () => {
   });
 
   const columns = [
-    { title: "Захиалгын дугаар", dataIndex: "id", key: "id", width: 120, 
-      align: "center", },
-    { title: "Харилцагч", dataIndex: ["customerName"], key: "name",
-      align: "center", },
-    { title: "Огноо", dataIndex: "orderDate", key: "orderDate", 
+    {
+      title: "Захиалгын дугаар", dataIndex: "id", key: "id", width: 120,
       align: "center",
-      render: (dateTime) => (dateTime ? formatDate(dateTime) : "-") },
-    { title: "Өнгө", dataIndex: ["fiberColor"], key: "color", 
-      align: "center", render: (color) => <Tag color="geekblue">{color}</Tag> },
+    },
+    {
+      title: "Харилцагч", dataIndex: ["customerName"], key: "name",
+      align: "center",
+    },
+    {
+      title: "Огноо",
+      dataIndex: "orderDate",
+      key: "orderDate",
+      align: "center",
+      render: (dateTime) => (dateTime ? formatDate(dateTime) : "-"),
+      sorter: (a, b) => new Date(a.orderDate) - new Date(b.orderDate),
+    },
+
+    {
+      title: "Өнгө", dataIndex: ["fiberColor"], key: "color",
+      align: "center", render: (color) => <Tag color="geekblue">{color}</Tag>
+    },
     {
       title: "Төлөв",
       dataIndex: "status",
@@ -79,9 +90,11 @@ const Orders = () => {
       align: "center",
       render: (status) => <Tag color={StatusColorMap[status]}>{status}</Tag>,
     },
-    { title: "Жин", dataIndex: "weight", key: "weight", 
+    {
+      title: "Жин", dataIndex: "weight", key: "weight",
       align: "center",
-      render: (text) => `${text} кг`, },
+      render: (text) => `${text} кг`,
+    },
     {
       title: "Процесс харах",
       key: "processActions",
@@ -113,7 +126,7 @@ const Orders = () => {
         </Button>
       ),
       width: 150
-    }    
+    }
   ];
 
   const viewOrderProcesses = (orderId) => {

@@ -2,19 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { Table, Button, Form, Input, message, Select, Row, Col, Card, Typography, Space, Tag, Tooltip, Progress, Modal, } from 'antd';
 import { PlusOutlined, SearchOutlined, ExportOutlined, BarChartOutlined, } from '@ant-design/icons';
 import { useMaterials } from '../hooks/useMaterials';
-import { useInventory } from '../hooks/useInventory';
-import axios from 'axios';
 import { inventoryColumns, logColumns } from '../Components/Inventory/Columns';
 import ReceiveItemModal from '../Components/Inventory/ReceiveItemModal';
 import DeliverItemsModal from '../Components/Inventory/DeliverItemModal';
 import DeliveredItemsTable from '../Components/Inventory/DeliveredItemsTable';
+import { inventoryService } from '../Services/Inventory.service';
+import { deliveryService } from '../Services/delivery.service';
 
 const { Option } = Select;
 const { Title, Text } = Typography;
 
 const Inventory = () => {
   const { materials } = useMaterials();
-  const { inventoryData, logData, createInventory, searchInventory, fetchInventoryData, fetchInventoryLogs } = useInventory();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [form] = Form.useForm();
   const [searchText, setSearchText] = useState('');
@@ -22,11 +21,45 @@ const Inventory = () => {
   const [totalWeight, setTotalWeight] = useState(0);
   const [searchPerformed, setSearchPerformed] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
-  const [selectedItems, setSelectedItems] = useState([]);
   const [isShipModalVisible, setIsShipModalVisible] = useState(false);
   const [baseTotalWeight, setBaseTotalWeight] = useState(0);
   const [selectedCustomer, setSelectedCustomer] = useState("");
   const [deliveredData, setDeliveredData] = useState([]);
+  const [inventoryData, setInventoryData] = useState([]);
+  const [logData, setLogData] = useState([]);
+  const [isRefresh, setRefresh] = useState(false);
+
+  const fetchInventoryData = async () => {
+    try {
+      const data = await inventoryService.fetchAllinventory();
+      setInventoryData(data);
+    } catch (error) {
+      message.error('Error fetching inventory data');
+    }
+  };
+  
+  const fetchInventoryLogs = async () => {
+    try {
+      const data = await inventoryService.fetchInventoryLogs();
+      setLogData(data);
+    } catch (error) {
+      message.error('Error fetching inventory logs');
+    }
+  };
+  
+  useEffect(() => {
+    if (isRefresh) {
+      fetchInventoryData();
+      fetchInventoryLogs();
+      setRefresh(false);
+    }
+  }, [isRefresh]);
+  
+  useEffect(() => {
+    fetchInventoryData();
+    fetchInventoryLogs();
+    fetchDeliveredItems();
+  }, []);
 
   const handleOpenShipModal = () => {
     setIsShipModalVisible(true);
@@ -37,31 +70,23 @@ const Inventory = () => {
   };
 
   const fetchDeliveredItems = async () => {
-    const { data } = await axios.get(`http://localhost:8080/api/delivery/delivered`);
-    setDeliveredData(data);
+    try {
+      const data = await deliveryService.fetchAllDelivered();
+      setDeliveredData(data);
+    } catch (error) {
+      message.error(error.message);
+    }
   };
 
+
   const handleDeliver = async (request) => {
-    console.log("Request sent:", request); 
     try {
-      const response = await axios.post("http://localhost:8080/api/delivery/deliver-inventory", request);
-      console.log("Response received:", response); 
-      const data = response.data;
-  
-      if (response.status === 200 && data.message) {
-      } else {
-        message.error("Unexpected response from the server.");
-      }
-  
-      await fetchDeliveredItems();
+      const data = await deliveryService.deliverInventory(request);
+      message.success('Амжилттай хүлээлгэн өглөө');
+      fetchDeliveredItems();
+      setIsShipModalVisible(false);
     } catch (error) {
-      console.error("Error:", error);
-      if (error.response) {
-        const errorMessage = error.response.data?.message || "Failed to deliver items.";
-        message.error(errorMessage);
-      } else {
-        message.error("Network error or server is unavailable.");
-      }
+      message.error(error.message);
     }
   };
 
@@ -73,33 +98,6 @@ const Inventory = () => {
     calculateTotalWeight();
   }, [inventoryData]);
 
-  useEffect(() => {
-    fetchDeliveredItems();
-  }, []); 
-
-  const handleReceiveItem = async (values) => {
-    const requestBody = {
-      fiberMaterial: values.fiberMaterial,
-      customerName: values.customerName,
-      fiberColor: values.fiberColor,
-      fiberType: values.fiberType,
-      roughWeight: values.roughWeight,
-      baleWeight: values.baleWeight,
-      bobbinWeight: values.bobbinWeight,
-      baleNum: values.baleNum,
-      bobbinNum: values.bobbinNum,
-    };
-
-    try {
-      await createInventory(requestBody);
-      message.success('Амжилттай хүлээн авлаа');
-      setIsModalVisible(false);
-      form.resetFields();
-    } catch (error) {
-      message.error('Хүлээн авахад алдаа гарлаа');
-    }
-  };
-
   const handleOpenModal = () => {
     setIsModalVisible(true);
   };
@@ -108,10 +106,11 @@ const Inventory = () => {
     setIsModalVisible(false);
     form.resetFields();
   };
-
+  
   const handleSearch = async () => {
     try {
-      await searchInventory(searchText, filterType);
+      const data = await inventoryService.searchInventory(searchText, filterType);
+      setInventoryData(data);
       setSearchPerformed(true);
     } catch (error) {
       message.error('Search failed');
@@ -335,8 +334,7 @@ const Inventory = () => {
       <ReceiveItemModal
         isModalVisible={isModalVisible}
         handleCancel={handleCancel}
-        handleReceiveItem={handleReceiveItem}
-        form={form}
+        setRefresh={setRefresh}
       />
 
       <Modal
